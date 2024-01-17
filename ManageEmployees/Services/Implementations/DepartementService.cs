@@ -33,17 +33,19 @@ namespace ManageEmployees.Services.Implementations
         }
 
 
-        public async Task<ReadDepartment> GetDepartmentByIdAsync(int departmentId)
+        public async Task<DetailDepartment> GetDepartmentByIdAsync(int departmentId)
         {
             var department = await _departementRepository.GetDepartmentByIdAsync(departmentId);
 
             if (department is null)
                 throw new Exception($"Echec de recupération des informations d'un département car il n'existe pas : {departmentId}");
 
-            return new ReadDepartment()
+            return new DetailDepartment()
             {
                 Id = department.DepartmentId,
                 Name = department.Name,
+                Description = department.Description,
+                Address = department.Address
             };
         }
 
@@ -52,8 +54,8 @@ namespace ManageEmployees.Services.Implementations
             var departmentGet = await _departementRepository.GetDepartmentByIdAsync(departmentId)
                 ?? throw new Exception($"Echec de mise à jour d'un département : Il n'existe aucun departement avec cet identifiant : {departmentId}");
 
-            departmentGet = await _departementRepository.GetDepartmentByNameAsync(department.Name);
-            if (departmentGet is not null && departmentId != departmentGet.DepartmentId)
+            var departmentGetByName = await _departementRepository.GetDepartmentByNameAsync(department.Name);
+            if (departmentGetByName is not null && departmentId != departmentGetByName.DepartmentId)
             {
                 throw new Exception($"Echec de mise à jour d'un département : Il existe déjà un département avec ce nom {department.Name}");
             }
