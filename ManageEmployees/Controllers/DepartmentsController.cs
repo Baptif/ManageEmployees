@@ -1,9 +1,6 @@
 ﻿using ManageEmployees.Dtos.Department;
-using ManageEmployees.Entities;
 using ManageEmployees.Services.Contracts;
-using ManageEmployees.Services.Implementations;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -27,11 +24,11 @@ namespace ManageEmployees.Controllers
             return await _departementService.GetDepartments();
         }
 
-        // GET: api/Departments1/5
+        // GET: api/Departments/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ReadDepartment>> GetDepartment(int id)
         {
-            if (id == 0)
+            if (id < 0)
             {
                 return BadRequest("Echec de lecture des departement : l'ID est égale à 0");
             }
@@ -68,11 +65,11 @@ namespace ManageEmployees.Controllers
             }
         }
 
-        // PUT: api/Departments1/5
+        // PUT: api/Departments/5
         [HttpPut("{id}")]
         public async Task<ActionResult> PutDepartment(int id, [FromBody] UpdateDepartment department)
         {
-            if (id == 0)
+            if (id < 0)
             {
                 return BadRequest("Echec de lecture des departement : l'id est égale à 0");
             }
@@ -94,11 +91,11 @@ namespace ManageEmployees.Controllers
             }
         }
 
-        // DELETE: api/Departments1/5
+        // DELETE: api/Departments/5
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteDepartment(int id)
         {
-            if (id == 0)
+            if (id < 0)
             {
                 return BadRequest("Echec de suppression du departement : l'ID est égale à 0");
             }

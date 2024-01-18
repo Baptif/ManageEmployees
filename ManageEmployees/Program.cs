@@ -13,8 +13,10 @@ builder.Services.AddDbContext<ManageEmployeeDbContext>(options => options.UseSql
 
 // Ajout des repositories
 builder.Services.AddScoped<IDepartementRepository, DepartementRepository>();
+builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 // Ajout des services
 builder.Services.AddScoped<IDepartementService, DepartementService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
