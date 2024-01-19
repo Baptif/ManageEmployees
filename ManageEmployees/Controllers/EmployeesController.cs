@@ -52,7 +52,7 @@ namespace ManageEmployees.Controllers
                 || string.IsNullOrWhiteSpace(employee.FirstName)
                 || string.IsNullOrWhiteSpace(employee.LastName) 
                 || string.IsNullOrWhiteSpace(employee.Position)
-                || employee.BirthDate == default(DateTime))
+                || employee.BirthDate == null)
             {
                 return BadRequest("Echec de création d'un employé : les informations sont null ou vides");
             } 
@@ -89,7 +89,7 @@ namespace ManageEmployees.Controllers
                 || string.IsNullOrWhiteSpace(employee.FirstName)
                 || string.IsNullOrWhiteSpace(employee.LastName)
                 || string.IsNullOrWhiteSpace(employee.Position)
-                || employee.BirthDate == default(DateTime))
+                || employee.BirthDate == null)
             {
                 return BadRequest("Echec de création d'un employé : les informations sont null ou vides");
             }
@@ -170,7 +170,7 @@ namespace ManageEmployees.Controllers
 
             try
             {
-                await _employeeService.AddDepartmentToEmployee(employeeId, departmentId);
+                await _employeeService.RemoveDepartmentFromEmployee(employeeId, departmentId);
                 return Ok("Département d'ID " + departmentId + " supprimé avec succès de l'employé d'ID " + employeeId);
             }
             catch (Exception ex)

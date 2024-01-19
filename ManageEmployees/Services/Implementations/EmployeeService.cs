@@ -4,6 +4,7 @@ using ManageEmployees.Entities;
 using ManageEmployees.Repositories.Contracts;
 using ManageEmployees.Repositories.Implementations;
 using ManageEmployees.Services.Contracts;
+using System.Collections.Generic;
 
 namespace ManageEmployees.Services.Implementations
 {
@@ -11,11 +12,16 @@ namespace ManageEmployees.Services.Implementations
     {
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IDepartementRepository _departementRepository;
+        private readonly IAttendanceRepository _attendanceRepository;
+        private readonly ILeaveRequestRepository _leaveRequestRepository;
 
-        public EmployeeService(IEmployeeRepository employeeRepository, IDepartementRepository departementRepository)
+        public EmployeeService(IEmployeeRepository employeeRepository, IDepartementRepository departementRepository, 
+            IAttendanceRepository attendanceRepository, ILeaveRequestRepository leaveRequestRepository)
         {
             _employeeRepository = employeeRepository;
             _departementRepository = departementRepository;
+            _attendanceRepository = attendanceRepository;
+            _leaveRequestRepository = leaveRequestRepository;
         }
 
         public async Task<List<ReadEmployee>> GetEmployees()
@@ -77,7 +83,6 @@ namespace ManageEmployees.Services.Implementations
             employeeGet.Position = employee.Position;
 
             await _employeeRepository.UpdateEmployeeAsync(employeeGet);
-
         }
 
         public async Task AddDepartmentToEmployee(int employeeId, int departmentId)
@@ -128,7 +133,21 @@ namespace ManageEmployees.Services.Implementations
         public async Task DeleteEmployeeById(int employeeId)
         {
             var employeeGet = await _employeeRepository.GetEmployeeByIdAsync(employeeId)
-                ?? throw new Exception($"Echec de mise à jour d'un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
+                ?? throw new Exception($"Echec de suppression d'un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
+
+            var attendances = await _attendanceRepository.GetAttendanceByEmployeeIdAsync(employeeId);
+            if (attendances.Any())
+            {
+                throw new Exception($"Echec de suppression d'un employé : il possède des présences");
+            }
+
+            var leaveRequest = await _leaveRequestRepository.GetLeaveRequestsByEmployeeIdAsync(employeeId);
+            if (leaveRequest.Any())
+            {
+                throw new Exception($"Echec de suppression d'un employé : il possède des congés");
+            }
+
+            // TODO : Supprimer les départements de l'employé avant
 
             await _employeeRepository.DeleteEmployeeByIdAsync(employeeId);
         }
@@ -138,7 +157,7 @@ namespace ManageEmployees.Services.Implementations
             var employeeGet = await _employeeRepository.GetEmployeeByEmailAsync(employee.Email);
             if (employeeGet is not null)
             {
-                throw new Exception($"Echec de création d'un employé : Il existe déjà un employé avec cette email {employee.Email}");
+                throw new Exception($"Echec de création d'un employé : il existe déjà un employé avec cette email {employee.Email}");
             }
 
             var employeeTocreate = new Employee()
