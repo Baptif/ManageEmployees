@@ -33,6 +33,7 @@ namespace ManageEmployees.Repositories.Implementations
         {
             return await _dbContext
                 .Employees.Include(x => x.EmployeesDepartments)
+                .ThenInclude(x => x.Department)
                 .FirstOrDefaultAsync(x => x.EmployeeId == employeeId);
         }
 
@@ -54,6 +55,14 @@ namespace ManageEmployees.Repositories.Implementations
                 .FirstOrDefault(x => x.EmployeeId == employeeId && x.DepartmentId == departmentId);
 
             _dbContext.EmployeesDepartments.Remove(employeeDepartment);
+            await _dbContext.SaveChangesAsync();
+        }
+
+        public async Task RemoveEmployeeFromDepartments(int employeeId)
+        {
+            var employeeDepartments = _dbContext.EmployeesDepartments.FirstOrDefault(x => x.EmployeeId == employeeId);
+
+            _dbContext.EmployeesDepartments.Remove(employeeDepartments);
             await _dbContext.SaveChangesAsync();
         }
 

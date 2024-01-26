@@ -18,6 +18,8 @@ namespace ManageEmployees.Repositories.Contracts
 
         Task RemoveEmployeeDepartment(int employeeId, int departmentId);
 
+        Task RemoveEmployeeFromDepartments(int employeeId);
+
         Task<Employee> CreateEmployeeAsync(Employee employeeToCreate);
 
         Task<Employee> DeleteEmployeeByIdAsync(int employeeId);

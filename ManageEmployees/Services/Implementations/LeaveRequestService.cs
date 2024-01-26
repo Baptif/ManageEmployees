@@ -22,7 +22,7 @@ namespace ManageEmployees.Services.Implementations
         public async Task<List<ReadLeaveRequest>> GetLeaveRequestsByEmployeeId(int employeeId)
         {
             var leaveRequestList = await _leaveRequestRepository.GetLeaveRequestsByEmployeeIdAsync(employeeId);
-
+            // leaveRequestList peut être une liste vide
             return leaveRequestList.Select(leaveRequest => new ReadLeaveRequest
             {
                 LeaveRequestId = leaveRequest.LeaveRequestId,
@@ -57,13 +57,24 @@ namespace ManageEmployees.Services.Implementations
         public async Task<ReadLeaveRequest> CreateLeaveRequestAsync(CreateLeaveRequest leaveRequest)
         {
             var employee = await _employeeRepository.GetEmployeeByIdAsync(leaveRequest.EmployeeId);
-
             if (employee is null)
+            {
                 throw new Exception($"Echec de création de congé, l'employé n'existe pas : {leaveRequest.EmployeeId}");
+            }
 
-            if(leaveRequest.StartDate > leaveRequest.EndDate)
+            if(leaveRequest.StartDate >= leaveRequest.EndDate)
             {
                 throw new Exception($"Echec de création de congé la date de début est supérieur à la date de fin");
+            }
+
+            var existingLeaveRequests = await _leaveRequestRepository.GetLeaveRequestsByEmployeeIdAsync(leaveRequest.EmployeeId);
+
+            if (existingLeaveRequests.Any(lr =>
+                (leaveRequest.StartDate >= lr.StartDate && leaveRequest.StartDate <= lr.EndDate) ||
+                (leaveRequest.EndDate >= lr.StartDate && leaveRequest.EndDate <= lr.EndDate) ||
+                (leaveRequest.StartDate <= lr.StartDate && leaveRequest.EndDate >= lr.EndDate)))
+            {
+                throw new Exception($"Echec de création de congé : l'employé a déjà une demande de congé pour cette période.");
             }
 
             var leaveRequestEntity = new LeaveRequest

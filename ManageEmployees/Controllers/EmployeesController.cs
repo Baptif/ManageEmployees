@@ -1,4 +1,5 @@
-﻿using ManageEmployees.Dtos.Employee;
+﻿using ManageEmployees.Dtos.Department;
+using ManageEmployees.Dtos.Employee;
 using ManageEmployees.Services.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.RegularExpressions;
@@ -126,6 +127,25 @@ namespace ManageEmployees.Controllers
             {
                 await _employeeService.DeleteEmployeeById(id);
                 return Ok("Succesfully deleted employee with ID : " + id);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+        [HttpGet("{employeeId}/departments")]
+        public async Task<ActionResult<List<ReadDepartment>>> GetDepartmentsForEmployee(int employeeId)
+        {
+            if (employeeId < 0)
+            {
+                return BadRequest("Echec de la suppression d'un département à l'employé : le format de l'ID est invalide");
+            }
+
+            try
+            {
+                var departments = await _employeeService.GetDepartmentsForEmployee(employeeId);
+                return Ok(departments);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
-﻿using ManageEmployees.Dtos.Employee;
+﻿using ManageEmployees.Dtos.Department;
+using ManageEmployees.Dtos.Employee;
 
 namespace ManageEmployees.Services.Contracts
 {
@@ -11,5 +12,6 @@ namespace ManageEmployees.Services.Contracts
         Task RemoveDepartmentFromEmployee(int employeeId, int departmentId);
         Task DeleteEmployeeById(int employeeId);
         Task<ReadEmployee> CreateEmployeeAsync(CreateEmployee employee);
+        Task<List<ReadDepartment>> GetDepartmentsForEmployee(int employeeId);
     }
 }

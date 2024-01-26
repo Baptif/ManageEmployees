@@ -121,7 +121,7 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec d'ajout d'un département à un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
             }
 
-            var department = _departementRepository.GetDepartmentByIdAsync(departmentId);
+            var department = await _departementRepository.GetDepartmentByIdAsync(departmentId);
             if (department == null)
             {
                 throw new Exception($"Echec d'ajout d'un département à un employé : Il n'existe aucun département avec cet identifiant : {departmentId}");
@@ -147,7 +147,7 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de suppression d'un employé : il possède des congés");
             }
 
-            // TODO : Supprimer les départements de l'employé avant
+            await _employeeRepository.RemoveEmployeeFromDepartments(employeeId);
 
             await _employeeRepository.DeleteEmployeeByIdAsync(employeeId);
         }
@@ -179,6 +179,31 @@ namespace ManageEmployees.Services.Implementations
                 LastName = employeeCreated.LastName,
                 Email = employeeCreated.Email,
             };
+        }
+
+        public async Task<List<ReadDepartment>> GetDepartmentsForEmployee(int employeeId)
+        {
+            var employee = await _employeeRepository.GetEmployeeByIdWithIncludeAsync(employeeId);
+
+            if (employee == null)
+            {
+                throw new Exception($"Echec de récupération des départements pour l'employé : L'employé avec l'ID {employeeId} n'existe pas.");
+            }
+
+            var departments = employee.EmployeesDepartments
+                .Select(ed => new ReadDepartment
+                {
+                    Id = ed.Department.DepartmentId,
+                    Name = ed.Department.Name,
+                })
+                .ToList();
+
+            if (!departments.Any())
+            {
+                throw new Exception($"L'employé {employeeId} n'est associé à aucun départements.");
+            }
+
+            return departments;
         }
     }
 }
