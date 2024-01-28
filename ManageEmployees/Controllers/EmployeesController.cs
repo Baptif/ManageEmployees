@@ -31,7 +31,7 @@ namespace ManageEmployees.Controllers
         {
             if (id < 0)
             {
-                return BadRequest("Echec de lecture des employés : l'ID est égale à 0");
+                return BadRequest("Echec de lecture de l'employé : l'ID est inférieur à 0");
             }
 
             try
@@ -83,7 +83,7 @@ namespace ManageEmployees.Controllers
         {
             if (id < 0)
             {
-                return BadRequest("Echec de lecture des employé : l'id est égale à 0");
+                return BadRequest("Echec de modification de l'employé : l'ID est inférieur à 0");
             }
 
             if (employee == null
@@ -92,21 +92,21 @@ namespace ManageEmployees.Controllers
                 || string.IsNullOrWhiteSpace(employee.Position)
                 || employee.BirthDate == null)
             {
-                return BadRequest("Echec de création d'un employé : les informations sont null ou vides");
+                return BadRequest("Echec de modification d'un employé : les informations sont null ou vides");
             }
             else if (!IsValidEmail(employee.Email))
             {
-                return BadRequest("Echec de création d'un employé : le format de l'email n'est pas le bon");
+                return BadRequest("Echec de modification d'un employé : le format de l'email n'est pas le bon");
             }
             else if (!IsValidPhoneNumber(employee.PhoneNumber))
             {
-                return BadRequest("Echec de création d'un employé : le format de du numéro de téléphone n'est pas le bon");
+                return BadRequest("Echec de modification d'un employé : le format de du numéro de téléphone n'est pas le bon");
             }
 
             try
             {
                 await _employeeService.UpdateEmployeeAsync(id, employee);
-                return Ok("Succesfully updated employee with ID : " + id);
+                return Ok($"Modification des données de l'employé numéro {id} réussie");
             }
             catch (Exception ex)
             {
@@ -126,7 +126,7 @@ namespace ManageEmployees.Controllers
             try
             {
                 await _employeeService.DeleteEmployeeById(id);
-                return Ok("Succesfully deleted employee with ID : " + id);
+                return Ok($"Suppression de l'employé numéro {id} réussie");
             }
             catch (Exception ex)
             {
@@ -168,7 +168,7 @@ namespace ManageEmployees.Controllers
             try
             {
                 await _employeeService.AddDepartmentToEmployee(employeeId, departmentId);
-                return Ok("Département d'ID "+ departmentId + " ajouté avec succès à l'employé d'ID " + employeeId);
+                return Ok($"Département numéro {departmentId} ajouté avec succès à l'employé numéro {employeeId}");
             }
             catch (Exception ex)
             {
@@ -191,7 +191,7 @@ namespace ManageEmployees.Controllers
             try
             {
                 await _employeeService.RemoveDepartmentFromEmployee(employeeId, departmentId);
-                return Ok("Département d'ID " + departmentId + " supprimé avec succès de l'employé d'ID " + employeeId);
+                return Ok($"Département numéro {departmentId} supprimé avec succès de l'employé numéro {employeeId}");
             }
             catch (Exception ex)
             {
@@ -216,7 +216,7 @@ namespace ManageEmployees.Controllers
         
         public static bool IsValidPhoneNumber(string phoneNumber)
         {
-            if (string.IsNullOrWhiteSpace(phoneNumber))
+            if (string.IsNullOrWhiteSpace(phoneNumber) || phoneNumber.Length > 13)
             {
                 return false;
             }

@@ -35,7 +35,7 @@ namespace ManageEmployees.Controllers
         {
             if (leaveRequestStatusId < 0)
             {
-                return BadRequest("Echec de lecture du status du congé : l'ID est inférieur à 0");
+                return BadRequest("Echec de lecture du statut d'un congé : l'ID est inférieur à 0");
             }
 
             try
@@ -55,7 +55,7 @@ namespace ManageEmployees.Controllers
             if (leaveRequestStatus == null 
                 || string.IsNullOrWhiteSpace(leaveRequestStatus.Status))
             {
-                return BadRequest("Echec de création d'un status : les informations sont null ou vides");
+                return BadRequest("Echec de création d'un statut : les informations sont null ou vides");
             }
 
             try
@@ -74,19 +74,19 @@ namespace ManageEmployees.Controllers
         {
             if (leaveRequestStatusId < 0)
             {
-                return BadRequest("Echec de lecture du status du congé : l'ID est inférieur à 0");
+                return BadRequest("Echec de lecture du statut d'un congé : l'ID est inférieur à 0");
             }
 
             if (updateLeaveRequestStatus == null
                 || string.IsNullOrWhiteSpace(updateLeaveRequestStatus.Status))
             {
-                return BadRequest("Echec de création d'un status : les informations sont null ou vides");
+                return BadRequest("Echec de création d'un statut : les informations sont null ou vides");
             }
 
             try
             {
                 await _leaveRequestStatusService.UpdateLeaveRequestStatus(leaveRequestStatusId, updateLeaveRequestStatus);
-                return Ok($"Succès : Statut de la demande de congé {leaveRequestStatusId} mis à jour.");
+                return Ok($"Succès : Statut {leaveRequestStatusId} mis à jour.");
             }
             catch (Exception ex)
             {
@@ -99,13 +99,13 @@ namespace ManageEmployees.Controllers
         {
             if (leaveRequestStatusId < 0)
             {
-                return BadRequest("Echec de lecture du status du congé : l'ID est inférieur à 0");
+                return BadRequest("Echec de lecture du statut d'un congé : l'ID est inférieur à 0");
             }
 
             try
             {
                 await _leaveRequestStatusService.DeleteLeaveRequestStatus(leaveRequestStatusId);
-                return Ok($"Succès : Statut de la demande de congé {leaveRequestStatusId} supprimé.");
+                return Ok($"Succès : Statut {leaveRequestStatusId} supprimé.");
             }
             catch (Exception ex)
             {

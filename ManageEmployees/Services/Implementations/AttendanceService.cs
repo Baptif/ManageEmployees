@@ -1,4 +1,5 @@
-﻿using ManageEmployees.Dtos.Attendance;
+﻿using AutoMapper;
+using ManageEmployees.Dtos.Attendance;
 using ManageEmployees.Entities;
 using ManageEmployees.Repositories.Contracts;
 using ManageEmployees.Repositories.Implementations;
@@ -10,11 +11,13 @@ namespace ManageEmployees.Services.Implementations
     {
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IMapper _mapper;
 
-        public AttendanceService(IAttendanceRepository attendanceRepository, IEmployeeRepository employeeRepository)
+        public AttendanceService(IAttendanceRepository attendanceRepository, IEmployeeRepository employeeRepository, IMapper mapper)
         {
             _employeeRepository = employeeRepository;
             _attendanceRepository = attendanceRepository;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -32,13 +35,7 @@ namespace ManageEmployees.Services.Implementations
 
             var attendanceList = await _attendanceRepository.GetAttendanceByEmployeeIdAsync(employeeId);
 
-            return attendanceList.Select(attendance => new ReadAttendance
-            {
-                AttendanceId = attendance.AttendanceId,
-                EmployeeId = attendance.EmployeeId,
-                StartDate = attendance.StartDate,
-                EndDate = attendance.EndDate
-            }).ToList();
+            return _mapper.Map<List<ReadAttendance>>(attendanceList);
         }
 
         /// <summary>
@@ -56,13 +53,7 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de récupération des informations de présence car elle n'existe pas : {attendanceId}");
             }
 
-            return new ReadAttendance
-            {
-                AttendanceId = attendance.AttendanceId,
-                EmployeeId = attendance.EmployeeId,
-                StartDate = attendance.StartDate,
-                EndDate = attendance.EndDate
-            };
+            return _mapper.Map<ReadAttendance>(attendance);
         }
 
         /// <summary>
@@ -86,7 +77,7 @@ namespace ManageEmployees.Services.Implementations
 
             if (attendance.StartDate >= attendance.EndDate)
             {
-                throw new Exception($"Echec de création de la présence la date de début est supérieur à la date de fin");
+                throw new Exception($"Echec de création de la présence la date de début est supérieur ou égale à la date de fin");
             }
 
             TimeSpan presenceDuration = (TimeSpan)(attendance.EndDate - attendance.StartDate);
@@ -106,21 +97,11 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de création de la présence : une présence existe déjà pour cette journée.");
             }
 
-            var attendanceToCreate = new Attendance
-            {
-                EmployeeId = attendance.EmployeeId,
-                StartDate = attendance.StartDate,
-                EndDate = attendance.EndDate
-            };
+            var attendanceToCreate = _mapper.Map<Attendance>(attendance);
 
             await _attendanceRepository.CreateAttendanceAsync(attendanceToCreate);
 
-            return new ReadAttendance
-            {
-                EmployeeId = attendanceToCreate.EmployeeId,
-                StartDate = attendanceToCreate.StartDate,
-                EndDate = attendanceToCreate.EndDate
-            };
+            return _mapper.Map<ReadAttendance>(attendanceToCreate);
         }
 
         /// <summary>

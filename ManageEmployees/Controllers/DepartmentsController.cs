@@ -30,7 +30,7 @@ namespace ManageEmployees.Controllers
         {
             if (id < 0)
             {
-                return BadRequest("Echec de lecture des departement : l'ID est égale à 0");
+                return BadRequest("Echec de lecture des départements : l'ID est égal à 0");
             }
 
             try
@@ -71,19 +71,19 @@ namespace ManageEmployees.Controllers
         {
             if (id < 0)
             {
-                return BadRequest("Echec de lecture des departement : l'id est égale à 0");
+                return BadRequest("Echec de modification d'un departement : l'ID est égal à 0");
             }
 
             if (department == null || string.IsNullOrWhiteSpace(department.Name)
                 || string.IsNullOrWhiteSpace(department.Address) || string.IsNullOrWhiteSpace(department.Description))
             {
-                return BadRequest("Echec de création d'un departement : les informations sont null ou vides");
+                return BadRequest("Echec de modification d'un departement : les informations sont null ou vides");
             }
 
             try
             {
                 await _departementService.UpdateDepartmentAsync(id, department);
-                return Ok("Succesfully updated department of ID : " + id);
+                return Ok($"La modification du département numéro {id} a réussie");
             }
             catch (Exception ex)
             {
@@ -103,7 +103,7 @@ namespace ManageEmployees.Controllers
             try
             {
                 await _departementService.DeleteDepartmentById(id);
-                return Ok("Succesfully deleted department of ID : "+ id);
+                return Ok($"La suppression du département numéro {id} a réussie");
             }
             catch (Exception ex)
             {

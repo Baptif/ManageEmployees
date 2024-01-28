@@ -1,4 +1,5 @@
 using ManageEmployees.Infrastructures.Database;
+using ManageEmployees.Profiles;
 using ManageEmployees.Repositories.Contracts;
 using ManageEmployees.Repositories.Implementations;
 using ManageEmployees.Services.Contracts;
@@ -23,7 +24,15 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
 builder.Services.AddScoped<ILeaveRequestStatusService, LeaveRequestStatusService>();
-
+// Ajout des Mappers
+builder.Services.AddAutoMapper(
+    typeof(AttendanceProfile),
+    typeof(DepartmentProfile),
+    typeof(EmployeeProfile),
+    typeof(LeaveRequestProfile),
+    typeof(LeaveRequestStatusProfile)
+);
+// Ajout des controleurs
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

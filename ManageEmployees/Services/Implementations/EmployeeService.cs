@@ -1,4 +1,5 @@
-﻿using ManageEmployees.Dtos.Department;
+﻿using AutoMapper;
+using ManageEmployees.Dtos.Department;
 using ManageEmployees.Dtos.Employee;
 using ManageEmployees.Entities;
 using ManageEmployees.Repositories.Contracts;
@@ -14,77 +15,74 @@ namespace ManageEmployees.Services.Implementations
         private readonly IDepartementRepository _departementRepository;
         private readonly IAttendanceRepository _attendanceRepository;
         private readonly ILeaveRequestRepository _leaveRequestRepository;
+        private readonly IMapper _mapper;
 
-        public EmployeeService(IEmployeeRepository employeeRepository, IDepartementRepository departementRepository, 
-            IAttendanceRepository attendanceRepository, ILeaveRequestRepository leaveRequestRepository)
+        public EmployeeService(
+            IEmployeeRepository employeeRepository,
+            IDepartementRepository departementRepository,
+            IAttendanceRepository attendanceRepository,
+            ILeaveRequestRepository leaveRequestRepository,
+            IMapper mapper)
         {
             _employeeRepository = employeeRepository;
             _departementRepository = departementRepository;
             _attendanceRepository = attendanceRepository;
             _leaveRequestRepository = leaveRequestRepository;
+            _mapper = mapper;
         }
 
+        /// <summary>
+        /// Récupère la liste complète des employés.
+        /// </summary>
+        /// <returns>Une liste contenant les informations de tous les employés.</returns>
         public async Task<List<ReadEmployee>> GetEmployees()
         {
             var employees = await _employeeRepository.GetEmployeesAsync();
-
-            List<ReadEmployee> readEmployees = new List<ReadEmployee>();
-
-            foreach (var employee in employees)
-            {
-                readEmployees.Add(new ReadEmployee()
-                {
-                    Id = employee.EmployeeId,
-                    FirstName = employee.FirstName,
-                    LastName = employee.LastName,
-                    Email = employee.Email,
-                });
-            }
-
-            return readEmployees;
+            return _mapper.Map<List<ReadEmployee>>(employees);
         }
 
-
+        /// <summary>
+        /// Récupère les détails d'un employé en fonction de son identifiant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé.</param>
+        /// <returns>Les détails de l'employé correspondant à l'identifiant spécifié.</returns>
+        /// <exception cref="Exception">Levée si l'employé n'existe pas.</exception>
         public async Task<DetailEmployee> GetEmployeeByIdAsync(int employeeId)
         {
-            var employee = await _employeeRepository.GetEmployeeByIdAsync(employeeId);
+            var employee = await _employeeRepository.GetEmployeeByIdAsync(employeeId)
+                ?? throw new Exception($"Échec de récupération des informations de l'employé {employeeId} car il n'existe pas");
 
-            if (employee is null)
-                throw new Exception($"Echec de recupération des informations de l'employé car il n'existe pas : {employeeId}");
-
-            return new DetailEmployee()
-            {
-                Id = employee.EmployeeId,
-                FirstName = employee.FirstName,
-                LastName = employee.LastName,
-                BirthDate = employee.BirthdDate,
-                Email = employee.Email,
-                PhoneNumber = employee.PhoneNumber,
-                Position = employee.Position
-            };
+            return _mapper.Map<DetailEmployee>(employee);
         }
 
+        /// <summary>
+        /// Met à jour les informations d'un employé existant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé à mettre à jour.</param>
+        /// <param name="employee">Les nouvelles informations de l'employé.</param>
+        /// <exception cref="Exception">Levée si l'employé n'existe pas ou si une autre employé possède déjà la même adresse e-mail.</exception>
         public async Task UpdateEmployeeAsync(int employeeId, UpdateEmployee employee)
         {
             var employeeGet = await _employeeRepository.GetEmployeeByIdAsync(employeeId)
-                ?? throw new Exception($"Echec de mise à jour d'un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
+                ?? throw new Exception($"Échec de mise à jour d'un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
 
             var employeeGetByEmail = await _employeeRepository.GetEmployeeByEmailAsync(employee.Email);
             if (employeeGetByEmail is not null && employeeId != employeeGetByEmail.EmployeeId)
             {
-                throw new Exception($"Echec de mise à jour d'un employé : Il existe déjà un employé avec cette Email {employeeGetByEmail.Email}");
+                throw new Exception($"Échec de mise à jour d'un employé : Il existe déjà un employé avec cette Email {employeeGetByEmail.Email}");
             }
 
-            employeeGet.FirstName = employee.FirstName;
-            employeeGet.LastName = employee.LastName;
-            employeeGet.BirthdDate = employee.BirthDate;
-            employeeGet.Email = employee.Email;
-            employeeGet.PhoneNumber = employee.PhoneNumber;
-            employeeGet.Position = employee.Position;
+            _mapper.Map(employee, employeeGet);
 
             await _employeeRepository.UpdateEmployeeAsync(employeeGet);
         }
 
+        /// <summary>
+        /// Ajoute un département à un employé existant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé.</param>
+        /// <param name="departmentId">L'identifiant unique du département à ajouter.</param>
+        /// <exception cref="Exception">Levée si l'employé ou le département n'existe pas, ou si l'employé est déjà associé à ce département.</exception>
         public async Task AddDepartmentToEmployee(int employeeId, int departmentId)
         {
             var employee = await _employeeRepository.GetEmployeeByIdWithIncludeAsync(employeeId);
@@ -93,15 +91,15 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec d'ajout d'un département à un employé : Il n'existe aucun employé avec cet identifiant : {employeeId}");
             }
 
-            if (employee.EmployeesDepartments.Any(x => x.DepartmentId == departmentId))
-            {
-                throw new Exception($"L'employé est déjà associé à ce département : {departmentId}");
-            }
-
-            var department = _departementRepository.GetDepartmentByIdAsync(departmentId);
+            var department = await _departementRepository.GetDepartmentByIdAsync(departmentId);
             if (department == null)
             {
                 throw new Exception($"Echec d'ajout d'un département à un employé : Il n'existe aucun département avec cet identifiant : {departmentId}");
+            }
+
+            if (employee.EmployeesDepartments.Any(x => x.DepartmentId == departmentId))
+            {
+                throw new Exception($"L'employé est déjà associé à ce département : {departmentId}");
             }
 
             var employeeDepartment = new EmployeesDepartment
@@ -113,6 +111,12 @@ namespace ManageEmployees.Services.Implementations
             await _employeeRepository.AddEmployeeDepartment(employeeDepartment);
         }
 
+        /// <summary>
+        /// Supprime un département d'un employé existant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé.</param>
+        /// <param name="departmentId">L'identifiant unique du département à supprimer.</param>
+        /// <exception cref="Exception">Levée si l'employé ou le département n'existe pas.</exception>
         public async Task RemoveDepartmentFromEmployee(int employeeId, int departmentId)
         {
             var employee = await _employeeRepository.GetEmployeeByIdAsync(employeeId);
@@ -130,6 +134,13 @@ namespace ManageEmployees.Services.Implementations
             await _employeeRepository.RemoveEmployeeDepartment(employeeId, departmentId);
         }
 
+        /// <summary>
+        /// Supprime un employé en fonction de son identifiant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé à supprimer.</param>
+        /// <exception cref="Exception">
+        /// Levée si l'employé n'existe pas, s'il possède des présences ou des congés, ou s'il est associé à des départements.
+        /// </exception>
         public async Task DeleteEmployeeById(int employeeId)
         {
             var employeeGet = await _employeeRepository.GetEmployeeByIdAsync(employeeId)
@@ -147,55 +158,51 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de suppression d'un employé : il possède des congés");
             }
 
-            await _employeeRepository.RemoveEmployeeFromDepartments(employeeId);
+            var departments = employeeGet.EmployeesDepartments
+                .Select(ed => _mapper.Map<ReadDepartment>(ed.Department))
+                .ToList();
+
+            if (departments.Any())
+            {
+                await _employeeRepository.RemoveEmployeeFromDepartments(employeeId);
+            }
 
             await _employeeRepository.DeleteEmployeeByIdAsync(employeeId);
         }
 
+        /// <summary>
+        /// Crée un nouvel employé.
+        /// </summary>
+        /// <param name="employee">Informations du nouvel employé.</param>
+        /// <returns>Informations de l'employé créé.</returns>
+        /// <exception cref="Exception">Levée si un employé avec la même adresse e-mail existe déjà.</exception>
         public async Task<ReadEmployee> CreateEmployeeAsync(CreateEmployee employee)
         {
-            var employeeGet = await _employeeRepository.GetEmployeeByEmailAsync(employee.Email);
-            if (employeeGet is not null)
+            var existingEmployee = await _employeeRepository.GetEmployeeByEmailAsync(employee.Email);
+            if (existingEmployee is not null)
             {
-                throw new Exception($"Echec de création d'un employé : il existe déjà un employé avec cette email {employee.Email}");
+                throw new Exception($"Échec de création d'un employé : il existe déjà un employé avec cett email {employee.Email}");
             }
 
-            var employeeTocreate = new Employee()
-            {
-                FirstName = employee.FirstName,
-                LastName = employee.LastName,
-                BirthdDate = employee.BirthDate,
-                Email = employee.Email,
-                PhoneNumber = employee.PhoneNumber,
-                Position = employee.Position,
-            };
+            var employeeToCreate = _mapper.Map<Employee>(employee);
+            var employeeCreated = await _employeeRepository.CreateEmployeeAsync(employeeToCreate);
 
-            var employeeCreated = await _employeeRepository.CreateEmployeeAsync(employeeTocreate);
-
-            return new ReadEmployee()
-            {
-                Id = employeeCreated.EmployeeId,
-                FirstName = employeeCreated.FirstName,
-                LastName = employeeCreated.LastName,
-                Email = employeeCreated.Email,
-            };
+            return _mapper.Map<ReadEmployee>(employeeCreated);
         }
 
+        /// <summary>
+        /// Récupère la liste des départements associés à un employé en fonction de son identifiant.
+        /// </summary>
+        /// <param name="employeeId">L'identifiant unique de l'employé.</param>
+        /// <returns>Une liste contenant les informations des départements associés à l'employé.</returns>
+        /// <exception cref="Exception">Levée si l'employé n'existe pas ou s'il n'est associé à aucun département.</exception>
         public async Task<List<ReadDepartment>> GetDepartmentsForEmployee(int employeeId)
         {
-            var employee = await _employeeRepository.GetEmployeeByIdWithIncludeAsync(employeeId);
-
-            if (employee == null)
-            {
-                throw new Exception($"Echec de récupération des départements pour l'employé : L'employé avec l'ID {employeeId} n'existe pas.");
-            }
+            var employee = await _employeeRepository.GetEmployeeByIdWithIncludeAsync(employeeId)
+                ?? throw new Exception($"Échec de récupération des départements pour l'employé : L'employé avec l'ID {employeeId} n'existe pas.");
 
             var departments = employee.EmployeesDepartments
-                .Select(ed => new ReadDepartment
-                {
-                    Id = ed.Department.DepartmentId,
-                    Name = ed.Department.Name,
-                })
+                .Select(ed => _mapper.Map<ReadDepartment>(ed.Department))
                 .ToList();
 
             if (!departments.Any())

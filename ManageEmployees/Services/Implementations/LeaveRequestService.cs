@@ -1,4 +1,5 @@
-﻿using ManageEmployees.Dtos.LeaveRequest;
+﻿using AutoMapper;
+using ManageEmployees.Dtos.LeaveRequest;
 using ManageEmployees.Entities;
 using ManageEmployees.Repositories.Contracts;
 using ManageEmployees.Repositories.Implementations;
@@ -11,29 +12,34 @@ namespace ManageEmployees.Services.Implementations
         private readonly ILeaveRequestRepository _leaveRequestRepository;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly ILeaveRequestStatusRepository _leaveRequestStatusRepository;
+        private readonly IMapper _mapper;
 
-        public LeaveRequestService(ILeaveRequestRepository leaveRequestRepository, IEmployeeRepository employeeRepository, ILeaveRequestStatusRepository leaveRequestStatusRepository)
+        public LeaveRequestService(ILeaveRequestRepository leaveRequestRepository, IEmployeeRepository employeeRepository, ILeaveRequestStatusRepository leaveRequestStatusRepository, IMapper mapper)
         {
             _employeeRepository = employeeRepository;
             _leaveRequestRepository = leaveRequestRepository;
             _leaveRequestStatusRepository = leaveRequestStatusRepository;
+            _mapper = mapper;
         }
 
+        /// <summary>
+        /// Récupère toutes les demandes de congé pour un employé.
+        /// </summary>
+        /// <param name="employeeId">ID de l'employé.</param>
+        /// <returns>Liste des demandes de congé pour l'employé.</returns>
         public async Task<List<ReadLeaveRequest>> GetLeaveRequestsByEmployeeId(int employeeId)
         {
             var leaveRequestList = await _leaveRequestRepository.GetLeaveRequestsByEmployeeIdAsync(employeeId);
-            // leaveRequestList peut être une liste vide
-            return leaveRequestList.Select(leaveRequest => new ReadLeaveRequest
-            {
-                LeaveRequestId = leaveRequest.LeaveRequestId,
-                EmployeeId = leaveRequest.EmployeeId,
-                LeaveRequestStatusId = leaveRequest.LeaveRequestStatusId,
-                RequestDate = leaveRequest.RequestDate,
-                StartDate = leaveRequest.StartDate,
-                EndDate = leaveRequest.EndDate
-            }).ToList();
+
+            // Utiliser AutoMapper pour mapper la liste de LeaveRequest à une liste de ReadLeaveRequest
+            return _mapper.Map<List<ReadLeaveRequest>>(leaveRequestList);
         }
 
+        /// <summary>
+        /// Récupère une demande de congé par son ID.
+        /// </summary>
+        /// <param name="leaveRequestId">ID de la demande de congé.</param>
+        /// <returns>Informations détaillées de la demande de congé.</returns>
         public async Task<ReadLeaveRequest> GetLeaveRequestById(int leaveRequestId)
         {
             var leaveRequest = await _leaveRequestRepository.GetLeaveRequestByIdAsync(leaveRequestId);
@@ -43,17 +49,14 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de récupération des informations de demande de congé car elle n'existe pas : {leaveRequestId}");
             }
 
-            return new ReadLeaveRequest
-            {
-                LeaveRequestId = leaveRequest.LeaveRequestId,
-                EmployeeId = leaveRequest.EmployeeId,
-                LeaveRequestStatusId = leaveRequest.LeaveRequestStatusId,
-                RequestDate = leaveRequest.RequestDate,
-                StartDate = leaveRequest.StartDate,
-                EndDate = leaveRequest.EndDate
-            };
+            return _mapper.Map<ReadLeaveRequest>(leaveRequest);
         }
 
+        /// <summary>
+        /// Crée une nouvelle demande de congé.
+        /// </summary>
+        /// <param name="leaveRequest">Informations de la nouvelle demande de congé.</param>
+        /// <returns>Informations de la demande de congé créée.</returns>
         public async Task<ReadLeaveRequest> CreateLeaveRequestAsync(CreateLeaveRequest leaveRequest)
         {
             var employee = await _employeeRepository.GetEmployeeByIdAsync(leaveRequest.EmployeeId);
@@ -62,9 +65,9 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de création de congé, l'employé n'existe pas : {leaveRequest.EmployeeId}");
             }
 
-            if(leaveRequest.StartDate >= leaveRequest.EndDate)
+            if (leaveRequest.StartDate >= leaveRequest.EndDate)
             {
-                throw new Exception($"Echec de création de congé la date de début est supérieur à la date de fin");
+                throw new Exception($"Echec de création de congé la date de début est supérieur ou égale à la date de fin");
             }
 
             var existingLeaveRequests = await _leaveRequestRepository.GetLeaveRequestsByEmployeeIdAsync(leaveRequest.EmployeeId);
@@ -77,28 +80,20 @@ namespace ManageEmployees.Services.Implementations
                 throw new Exception($"Echec de création de congé : l'employé a déjà une demande de congé pour cette période.");
             }
 
-            var leaveRequestEntity = new LeaveRequest
-            {
-                EmployeeId = leaveRequest.EmployeeId,
-                LeaveRequestStatusId = 1,
-                RequestDate = DateTime.Now,
-                StartDate = leaveRequest.StartDate,
-                EndDate = leaveRequest.EndDate
-            };
+            var leaveRequestEntity = _mapper.Map<LeaveRequest>(leaveRequest);
+            leaveRequestEntity.LeaveRequestStatusId = 1;
+            leaveRequestEntity.RequestDate = DateTime.Now;
 
             var leaveRequestCreated = await _leaveRequestRepository.CreateLeaveRequestAsync(leaveRequestEntity);
 
-            return new ReadLeaveRequest
-            {
-                LeaveRequestId = leaveRequestCreated.LeaveRequestId,
-                EmployeeId = leaveRequestCreated.EmployeeId,
-                LeaveRequestStatusId = leaveRequestCreated.LeaveRequestStatusId,
-                RequestDate = leaveRequestCreated.RequestDate,
-                StartDate = leaveRequestCreated.StartDate,
-                EndDate = leaveRequestCreated.EndDate
-            };
+            return _mapper.Map<ReadLeaveRequest>(leaveRequestCreated);
         }
 
+        /// <summary>
+        /// Met à jour le statut d'une demande de congé.
+        /// </summary>
+        /// <param name="leaveRequestId">ID de la demande de congé.</param>
+        /// <param name="updateLeaveRequestStatus">Informations de mise à jour du statut de la demande de congé.</param>
         public async Task UpdateLeaveRequestStatus(int leaveRequestId, UpdateLeaveRequest updateLeaveRequestStatus)
         {
             var leaveRequest = await _leaveRequestRepository.GetLeaveRequestByIdAsync(leaveRequestId);
@@ -110,13 +105,22 @@ namespace ManageEmployees.Services.Implementations
             var leaveRequestStatus = await _leaveRequestStatusRepository.GetLeaveRequestStatusByIdAsync(updateLeaveRequestStatus.LeaveRequestStatusId);
             if (leaveRequestStatus == null)
             {
-                throw new Exception($"Echec de mise à jour du statut de la demande de congé : Le statut n'existe n'existe pas : {leaveRequestId}");
+                throw new Exception($"Echec de mise à jour du statut de la demande de congé : Le statut n'existe n'existe pas : {updateLeaveRequestStatus.LeaveRequestStatusId}");
+            }
+
+            if (updateLeaveRequestStatus.LeaveRequestStatusId <= leaveRequest.LeaveRequestStatusId)
+            {
+                throw new Exception($"Echec de mise à jour du statut de la demande de congé : Le statut ne peut que évoluer");
             }
 
             leaveRequest.LeaveRequestStatusId = updateLeaveRequestStatus.LeaveRequestStatusId;
             await _leaveRequestRepository.UpdateLeaveRequestAsync(leaveRequest);
         }
 
+        /// <summary>
+        /// Supprime une demande de congé par son ID.
+        /// </summary>
+        /// <param name="leaveRequestId">ID de la demande de congé à supprimer.</param>
         public async Task DeleteLeaveRequestById(int leaveRequestId)
         {
             var leaveRequest = await _leaveRequestRepository.GetLeaveRequestByIdAsync(leaveRequestId);
@@ -130,4 +134,3 @@ namespace ManageEmployees.Services.Implementations
         }
     }
 }
-
