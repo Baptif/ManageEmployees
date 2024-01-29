@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getErrorMsg } from './functionUtils';
 
 const baseUrl = 'https://localhost:7282/api/Departments';
 
@@ -10,7 +11,7 @@ export const getAllDepartments = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching departments:', error);
-    toast.error(`${error.response.data.detail}`);
+    toast.error(`${getErrorMsg(error)}`);
   }
 };
 
@@ -20,7 +21,7 @@ export const getOneDepartment = async (id) => {
     return response.data;
   } catch (error) {
     console.error('Error fetching departments:', error);
-    toast.error(`${error.response.data.detail}`);
+    toast.error(`${getErrorMsg(error)}`);
   }
 };
 
@@ -34,7 +35,7 @@ export const addDepartment = async (department) => {
     return response.data;
   } catch (error) {
     console.error('Error adding department:', error);
-    toast.error(`${error.response.data.detail}`);
+    toast.error(`${getErrorMsg(error)}`);
   }
 };
 
@@ -48,7 +49,7 @@ export const editDepartment = async (department) => {
     return response.data;
   } catch (error) {
     console.error('Error editing department:', error);
-    toast.error(`${error.response.data.detail}`);
+    toast.error(`${getErrorMsg(error)}`);
   }
 };
 
@@ -57,6 +58,6 @@ export const deleteDepartment = async (id) => {
     await axios.delete(`${baseUrl}/${id}`);
   } catch (error) {
     console.error('Error deleting department:', error);
-    toast.error(`${error.response.data.detail}`);
+    toast.error(`${getErrorMsg(error)}`);
   }
 };

@@ -205,10 +205,10 @@ namespace ManageEmployees.Services.Implementations
                 .Select(ed => _mapper.Map<ReadDepartment>(ed.Department))
                 .ToList();
 
-            if (!departments.Any())
-            {
-                throw new Exception($"L'employé {employeeId} n'est associé à aucun départements.");
-            }
+            //if (!departments.Any())
+            //{
+                //throw new Exception($"L'employé {employeeId} n'est associé à aucun départements.");
+            //}
 
             return departments;
         }
