@@ -13,6 +13,9 @@ const Home = async () => {
         <Link href="/employee">
           <p>Employés</p>
         </Link>
+        <Link href="/attendance">
+          <p>Présences</p>
+        </Link>
     </main>
   );
 }
